@@ -1,0 +1,20 @@
+{
+  "name": "std/crypto",
+  "version": "0.1.0",
+  "license": "ISC",
+  "build": {
+    "native": {
+      "sourceFiles": [
+        "./doof_crypto.cpp"
+      ],
+      "extraCopyPaths": [
+        "./doof_crypto.hpp"
+      ]
+    }
+  },
+  "dependencies": {
+    "std/stream": {
+      "path": "../stream"
+    }
+  }
+}
