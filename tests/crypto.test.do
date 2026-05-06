@@ -8,16 +8,20 @@ import {
 class ChunkStream implements Stream<readonly byte[]> {
     chunks: byte[][]
     index: int = 0
+    currentValue: readonly byte[] = []
 
-    next(): readonly byte[] | null {
+    next(): bool {
         if this.index >= this.chunks.length {
-            return null
+            return false
         }
 
         chunk := this.chunks[this.index]
         this.index = this.index + 1
-        return chunk.buildReadonly()
+        this.currentValue = chunk.buildReadonly()
+        return true
     }
+
+    value(): readonly byte[] => this.currentValue
 }
 
 function assertBytes(actual: readonly byte[], expected: readonly byte[]): void {
@@ -30,8 +34,8 @@ function assertBytes(actual: readonly byte[], expected: readonly byte[]): void {
 
 function isFailure<T, E>(result: Result<T, E>): bool {
     return case result {
-        _: Success => false,
-        _: Failure => true
+        _: Success -> false,
+        _: Failure -> true
     }
 }
 

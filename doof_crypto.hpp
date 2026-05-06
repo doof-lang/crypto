@@ -32,10 +32,10 @@ template <typename StreamLike>
 std::shared_ptr<std::vector<uint8_t>> stream_to_sha256(const std::shared_ptr<StreamLike>& source) {
 	auto hasher = NativeSha256Hasher::create();
 	while (true) {
-		const auto chunk = source->next();
-		if (chunk == nullptr) {
+		if (!source->next()) {
 			return hasher->finish();
 		}
+		const auto chunk = source->value();
 		hasher->update(chunk);
 	}
 }
