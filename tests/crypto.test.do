@@ -2,7 +2,8 @@ import { Assert } from "std/assert"
 import {
     blobStreamToSha256, decodeBase64, decodeBase64Url, decodeHex, encodeBase64,
     encodeBase64Url, encodeHex, hmacSha256, hmacSha256String, randomBytes,
-    sha256, sha256Hex, sha256HexString, sha256String, uuidV4, parseJwt,
+    sha1, sha1Hex, sha1HexString, sha1String, sha256, sha256Hex,
+    sha256HexString, sha256String, uuidV4, parseJwt,
 } from "../index"
 
 class ChunkStream implements Stream<readonly byte[]> {
@@ -56,6 +57,31 @@ export function testDecodeHexRejectsOddLength(): void {
 
 export function testDecodeHexRejectsInvalidCharacter(): void {
     Assert.isTrue(isFailure(decodeHex("0x")))
+}
+
+export function testSha1KnownVectorForEmptyBytes(): void {
+    empty: readonly byte[] := []
+    Assert.equal(
+        sha1Hex(empty),
+        "da39a3ee5e6b4b0d3255bfef95601890afd80709"
+    )
+}
+
+export function testSha1KnownVectorForString(): void {
+    Assert.equal(
+        sha1HexString("abc"),
+        "a9993e364706816aba3e25717850c26c9cd0d89d"
+    )
+}
+
+export function testSha1StringMatchesByteHash(): void {
+    payload: readonly byte[] := [104, 101, 108, 108, 111]
+    assertBytes(sha1String("hello"), sha1(payload))
+}
+
+export function testSha1Base64WebSocketAcceptVector(): void {
+    digest := sha1String("dGhlIHNhbXBsZSBub25jZQ==258EAFA5-E914-47DA-95CA-C5AB0DC85B11")
+    Assert.equal(encodeBase64(digest), "s3pPLMBiTxaQ9kYGzzhZRbK+xOo=")
 }
 
 export function testSha256KnownVectorForEmptyBytes(): void {
@@ -147,13 +173,13 @@ export function testRandomBytesZeroLength(): void {
 export function testUuidV4Shape(): void {
     uuid := uuidV4()
     Assert.equal(uuid.length, 36)
-    Assert.equal(uuid.charAt(8), "-")
-    Assert.equal(uuid.charAt(13), "-")
-    Assert.equal(uuid.charAt(18), "-")
-    Assert.equal(uuid.charAt(23), "-")
-    Assert.equal(uuid.charAt(14), "4")
+    Assert.equal(string(uuid.charAt(8)), "-")
+    Assert.equal(string(uuid.charAt(13)), "-")
+    Assert.equal(string(uuid.charAt(18)), "-")
+    Assert.equal(string(uuid.charAt(23)), "-")
+    Assert.equal(string(uuid.charAt(14)), "4")
 
-    variant := uuid.charAt(19)
+    variant := string(uuid.charAt(19))
     Assert.isTrue(variant == "8" || variant == "9" || variant == "a" || variant == "b")
 
     compact := uuid.replaceAll("-", "")

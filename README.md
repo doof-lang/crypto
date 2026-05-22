@@ -2,17 +2,18 @@
 
 Small cryptographic primitives for Doof.
 
-This package provides SHA-256 digests, random byte generation, UUID v4 generation, and hexadecimal encoding utilities so packages can hash payloads, verify fixtures, generate identifiers, and move binary values through text-based interfaces.
+This package provides SHA-1 and SHA-256 digests, random byte generation, UUID v4 generation, and hexadecimal encoding utilities so packages can hash payloads, verify fixtures, generate identifiers, and move binary values through text-based interfaces.
 
 ## Examples
 
 ### Hash UTF-8 text
 
 ```doof
-import { sha256HexString } from "std/crypto"
+import { sha1HexString, sha256HexString } from "std/crypto"
 
-digest := sha256HexString("hello world")
-println(digest) // lowercase 64-char hex
+legacyDigest := sha1HexString("hello world")
+strongDigest := sha256HexString("hello world")
+println(strongDigest) // lowercase 64-char hex
 ```
 
 ### Hash raw bytes and render the digest
@@ -107,6 +108,14 @@ println(decoded.length)
 
 ## API
 
+- `sha1(data: readonly byte[]) -> readonly byte[]`
+	- Returns the 20-byte SHA-1 digest of `data`.
+- `sha1String(text: string) -> readonly byte[]`
+	- Hashes the UTF-8 bytes of `text` and returns the 20-byte digest.
+- `sha1Hex(data: readonly byte[]) -> string`
+	- Returns the lowercase hexadecimal representation of the SHA-1 digest for `data`.
+- `sha1HexString(text: string) -> string`
+	- Convenience: SHA-1 of `text` (UTF-8) as lowercase hex.
 - `sha256(data: readonly byte[]) -> readonly byte[]`
 	- Returns the 32-byte SHA-256 digest of `data`.
 - `sha256String(text: string) -> readonly byte[]`

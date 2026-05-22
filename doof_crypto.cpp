@@ -1,5 +1,6 @@
 #include "doof_crypto.hpp"
 
+#include <algorithm>
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -13,6 +14,7 @@ namespace doof_crypto {
 
 namespace {
 
+constexpr std::size_t kSha1BlockSize = 64u;
 constexpr std::size_t kSha256BlockSize = 64u;
 constexpr char kBase64Alphabet[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 constexpr char kBase64UrlAlphabet[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
@@ -46,6 +48,18 @@ constexpr std::array<uint32_t, 8> kSha256InitialState = {
     0x1f83d9abu,
     0x5be0cd19u,
 };
+
+constexpr std::array<uint32_t, 5> kSha1InitialState = {
+    0x67452301u,
+    0xefcdab89u,
+    0x98badcfeu,
+    0x10325476u,
+    0xc3d2e1f0u,
+};
+
+uint32_t rotate_left(uint32_t value, uint32_t amount) {
+    return (value << amount) | (value >> (32u - amount));
+}
 
 uint32_t rotate_right(uint32_t value, uint32_t amount) {
     return (value >> amount) | (value << (32u - amount));
@@ -124,6 +138,64 @@ std::shared_ptr<std::vector<uint8_t>> bytes_from_string(const std::string& text)
     return std::make_shared<std::vector<uint8_t>>(text.begin(), text.end());
 }
 
+void consume_sha1_block(std::array<uint32_t, 5>& state, const uint8_t* block) {
+    std::array<uint32_t, 80> schedule {};
+
+    for (std::size_t word = 0; word < 16u; ++word) {
+        const std::size_t index = word * 4u;
+        schedule[word] =
+            (static_cast<uint32_t>(block[index]) << 24u) |
+            (static_cast<uint32_t>(block[index + 1u]) << 16u) |
+            (static_cast<uint32_t>(block[index + 2u]) << 8u) |
+            static_cast<uint32_t>(block[index + 3u]);
+    }
+
+    for (std::size_t word = 16u; word < 80u; ++word) {
+        schedule[word] = rotate_left(
+            schedule[word - 3u] ^ schedule[word - 8u] ^ schedule[word - 14u] ^ schedule[word - 16u],
+            1u
+        );
+    }
+
+    uint32_t a = state[0];
+    uint32_t b = state[1];
+    uint32_t c = state[2];
+    uint32_t d = state[3];
+    uint32_t e = state[4];
+
+    for (std::size_t round = 0; round < 80u; ++round) {
+        uint32_t f = 0u;
+        uint32_t k = 0u;
+
+        if (round < 20u) {
+            f = (b & c) | ((~b) & d);
+            k = 0x5a827999u;
+        } else if (round < 40u) {
+            f = b ^ c ^ d;
+            k = 0x6ed9eba1u;
+        } else if (round < 60u) {
+            f = (b & c) | (b & d) | (c & d);
+            k = 0x8f1bbcdcu;
+        } else {
+            f = b ^ c ^ d;
+            k = 0xca62c1d6u;
+        }
+
+        const uint32_t temp = rotate_left(a, 5u) + f + e + k + schedule[round];
+        e = d;
+        d = c;
+        c = rotate_left(b, 30u);
+        b = a;
+        a = temp;
+    }
+
+    state[0] += a;
+    state[1] += b;
+    state[2] += c;
+    state[3] += d;
+    state[4] += e;
+}
+
 void consume_block(std::array<uint32_t, 8>& state, const uint8_t* block) {
     std::array<uint32_t, 64> schedule {};
 
@@ -184,6 +256,43 @@ std::shared_ptr<std::vector<uint8_t>> digest_from_state(const std::array<uint32_
         digest->push_back(static_cast<uint8_t>(word & 0xffu));
     }
     return digest;
+}
+
+std::shared_ptr<std::vector<uint8_t>> digest_from_sha1_state(const std::array<uint32_t, 5>& state) {
+    auto digest = std::make_shared<std::vector<uint8_t>>();
+    digest->reserve(20u);
+    for (uint32_t word : state) {
+        digest->push_back(static_cast<uint8_t>((word >> 24u) & 0xffu));
+        digest->push_back(static_cast<uint8_t>((word >> 16u) & 0xffu));
+        digest->push_back(static_cast<uint8_t>((word >> 8u) & 0xffu));
+        digest->push_back(static_cast<uint8_t>(word & 0xffu));
+    }
+    return digest;
+}
+
+std::shared_ptr<std::vector<uint8_t>> sha1_digest(const std::shared_ptr<std::vector<uint8_t>>& data) {
+    std::array<uint32_t, 5> state = kSha1InitialState;
+    std::vector<uint8_t> buffer;
+    if (data && !data->empty()) {
+        buffer.insert(buffer.end(), data->begin(), data->end());
+    }
+
+    const uint64_t total_bytes = static_cast<uint64_t>(buffer.size());
+    buffer.push_back(0x80u);
+    while ((buffer.size() % kSha1BlockSize) != 56u) {
+        buffer.push_back(0u);
+    }
+
+    const uint64_t bit_length = total_bytes * 8u;
+    for (int shift = 56; shift >= 0; shift -= 8) {
+        buffer.push_back(static_cast<uint8_t>((bit_length >> shift) & 0xffu));
+    }
+
+    for (std::size_t offset = 0; offset < buffer.size(); offset += kSha1BlockSize) {
+        consume_sha1_block(state, buffer.data() + offset);
+    }
+
+    return digest_from_sha1_state(state);
 }
 
 std::string encode_base64_impl(const std::shared_ptr<std::vector<uint8_t>>& data, const char* alphabet, bool include_padding) {
@@ -414,6 +523,14 @@ std::shared_ptr<std::vector<uint8_t>> sha256_bytes(const std::shared_ptr<std::ve
     auto hasher = NativeSha256Hasher::create();
     hasher->update(data);
     return hasher->finish();
+}
+
+std::shared_ptr<std::vector<uint8_t>> sha1_bytes(const std::shared_ptr<std::vector<uint8_t>>& data) {
+    return sha1_digest(data);
+}
+
+std::shared_ptr<std::vector<uint8_t>> sha1_utf8(const std::string& text) {
+    return sha1_digest(bytes_from_string(text));
 }
 
 std::shared_ptr<std::vector<uint8_t>> sha256_utf8(const std::string& text) {

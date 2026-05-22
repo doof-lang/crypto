@@ -50,6 +50,8 @@ std::shared_ptr<std::vector<uint8_t>> stream_to_sha256(const std::variant<std::s
 	);
 }
 
+std::shared_ptr<std::vector<uint8_t>> sha1_bytes(const std::shared_ptr<std::vector<uint8_t>>& data);
+std::shared_ptr<std::vector<uint8_t>> sha1_utf8(const std::string& text);
 std::shared_ptr<std::vector<uint8_t>> sha256_bytes(const std::shared_ptr<std::vector<uint8_t>>& data);
 std::shared_ptr<std::vector<uint8_t>> sha256_utf8(const std::string& text);
 std::shared_ptr<std::vector<uint8_t>> hmac_sha256(

@@ -1,6 +1,11 @@
 import { parseJsonValue } from "std/json"
 import { BlobReader } from "std/blob"
 
+export import function sha1(data: readonly byte[]): readonly byte[] from "doof_crypto.hpp" as doof_crypto::sha1_bytes
+export import function sha1String(text: string): readonly byte[] from "doof_crypto.hpp" as doof_crypto::sha1_utf8
+export function sha1Hex(data: readonly byte[]): string => encodeHex(sha1(data))
+export function sha1HexString(text: string): string => encodeHex(sha1String(text))
+
 export import function sha256(data: readonly byte[]): readonly byte[] from "doof_crypto.hpp" as doof_crypto::sha256_bytes
 export import function sha256String(text: string): readonly byte[] from "doof_crypto.hpp" as doof_crypto::sha256_utf8
 export function sha256Hex(data: readonly byte[]): string => encodeHex(sha256(data))
