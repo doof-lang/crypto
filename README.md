@@ -2,7 +2,7 @@
 
 Small cryptographic primitives for Doof.
 
-This package provides SHA-1 and SHA-256 digests, random byte generation, UUID v4 generation, and hexadecimal encoding utilities so packages can hash payloads, verify fixtures, generate identifiers, and move binary values through text-based interfaces.
+This package provides SHA-1 and SHA-256 digests, HMAC-SHA-256, JWT HS256 verification, random byte generation, UUID v4 generation, and text encoding utilities so packages can hash payloads, verify fixtures, generate identifiers, and move binary values through text-based interfaces.
 
 ## Examples
 
@@ -59,7 +59,22 @@ mac := hmacSha256String("secret-key", "message") // raw bytes
 println(encodeHex(mac))
 ```
 
-Use `hmacSha256(key: readonly byte[], data: readonly byte[])` when your key is binary; use `hmacSha256String` when you have a UTF-8 key.
+Use `hmacSha256(key: readonly byte[], data: readonly byte[])` when your key is binary; use `hmacSha256String` when you have a UTF-8 key. `hmacSha256Hex`, `hmacSha256HexString`, and `hmacSha256Base64Url` return common text encodings directly.
+
+### Verify a JWT signed with HS256
+
+```doof
+import { verifyJwtHs256String } from "std/crypto"
+
+jwt := verifyJwtHs256String(token, "secret") else {
+	println("invalid token")
+	return
+}
+
+println(jwt.signedContent)
+```
+
+Use `verifyJwtHs256(token, keyBytes)` when the HMAC key is binary.
 
 ### Base64 and Base64Url
 
@@ -126,6 +141,18 @@ println(decoded.length)
 	- Convenience: SHA-256 of `text` (UTF-8) as lowercase hex.
 - `streamToSha256(source: Stream<readonly byte[]>) -> readonly byte[]`
 	- Incrementally hashes the concatenated bytes from `source` and returns the 32-byte digest.
+- `hmacSha256(key: readonly byte[], data: readonly byte[]) -> readonly byte[]`
+	- Computes HMAC-SHA-256 over `data` using binary `key`.
+- `hmacSha256String(key: string, text: string) -> readonly byte[]`
+	- Computes HMAC-SHA-256 over UTF-8 `text` using UTF-8 `key`.
+- `hmacSha256Hex(key: readonly byte[], data: readonly byte[]) -> string`
+	- Computes HMAC-SHA-256 and returns lowercase hex.
+- `hmacSha256HexString(key: string, text: string) -> string`
+	- Computes HMAC-SHA-256 over UTF-8 `text` using UTF-8 `key` and returns lowercase hex.
+- `hmacSha256Base64Url(key: readonly byte[], data: readonly byte[]) -> string`
+	- Computes HMAC-SHA-256 and returns unpadded base64url.
+- `timingSafeEqual(a: readonly byte[], b: readonly byte[]) -> bool`
+	- Compares byte arrays without data-dependent early exit.
 - `randomBytes(length: int) -> readonly byte[]`
 	- Returns cryptographically-strong random bytes of the requested `length`.
 - `uuidV4() -> string`
@@ -134,6 +161,10 @@ println(decoded.length)
 	- Converts `data` to lowercase hexadecimal.
 - `decodeHex(text: string) -> Result<readonly byte[], string>`
 	- Parses hexadecimal (upper- or lower-case) into bytes; returns `Err` with an error message on invalid input.
+- `verifyJwtHs256(token: string, key: readonly byte[]) -> Result<Jwt, JwtError>`
+	- Parses and verifies an HS256 JWT using a binary key.
+- `verifyJwtHs256String(token: string, key: string) -> Result<Jwt, JwtError>`
+	- Parses and verifies an HS256 JWT using a UTF-8 key.
 
 ## Notes
 

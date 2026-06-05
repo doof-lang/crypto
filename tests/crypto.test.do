@@ -1,9 +1,11 @@
 import { Assert } from "std/assert"
 import {
     blobStreamToSha256, decodeBase64, decodeBase64Url, decodeHex, encodeBase64,
-    encodeBase64Url, encodeHex, hmacSha256, hmacSha256String, randomBytes,
+    encodeBase64Url, encodeHex, hmacSha256, hmacSha256Base64Url,
+    hmacSha256Hex, hmacSha256HexString, hmacSha256String, randomBytes,
     sha1, sha1Hex, sha1HexString, sha1String, sha256, sha256Hex,
-    sha256HexString, sha256String, uuidV4, parseJwt,
+    sha256HexString, sha256String, timingSafeEqual, uuidV4, parseJwt,
+    verifyJwtHs256, verifyJwtHs256String,
 } from "../index"
 
 class ChunkStream implements Stream<readonly byte[]> {
@@ -136,6 +138,37 @@ export function testHmacSha256BytesMatchesStringVariant(): void {
     assertBytes(hmacSha256(key, payload), hmacSha256String("key", "The quick brown fox jumps over the lazy dog"))
 }
 
+export function testHmacSha256HexHelpers(): void {
+    key: readonly byte[] := [107, 101, 121]
+    payload: readonly byte[] := [
+        84, 104, 101, 32, 113, 117, 105, 99, 107, 32, 98, 114, 111, 119,
+        110, 32, 102, 111, 120, 32, 106, 117, 109, 112, 115, 32, 111, 118,
+        101, 114, 32, 116, 104, 101, 32, 108, 97, 122, 121, 32, 100, 111,
+        103,
+    ]
+    expected := "f7bc83f430538424b13298e6aa6fb143ef4d59a14946175997479dbc2d1a3cd8"
+
+    Assert.equal(hmacSha256Hex(key, payload), expected)
+    Assert.equal(hmacSha256HexString("key", "The quick brown fox jumps over the lazy dog"), expected)
+}
+
+export function testHmacSha256Base64Url(): void {
+    key: readonly byte[] := [107, 101, 121]
+    payload: readonly byte[] := [100, 97, 116, 97]
+    Assert.equal(hmacSha256Base64Url(key, payload), "UDH-PZicbRU3oBP6bnOdojRj_a7DtwE32Cjjas4iG9A")
+}
+
+export function testTimingSafeEqual(): void {
+    a: readonly byte[] := [1, 2, 3]
+    same: readonly byte[] := [1, 2, 3]
+    differentValue: readonly byte[] := [1, 2, 4]
+    differentLength: readonly byte[] := [1, 2, 3, 0]
+
+    Assert.isTrue(timingSafeEqual(a, same))
+    Assert.isFalse(timingSafeEqual(a, differentValue))
+    Assert.isFalse(timingSafeEqual(a, differentLength))
+}
+
 export function testEncodeBase64(): void {
     payload: readonly byte[] := [104, 101, 108, 108, 111]
     Assert.equal(encodeBase64(payload), "aGVsbG8=")
@@ -207,3 +240,34 @@ export function testParseJwt(): void {
     Assert.equal(name, "John Doe")
     Assert.equal(iat, 1516239022)
 }  
+
+export function testVerifyJwtHs256String(): void {
+    token := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
+    jwt := try! verifyJwtHs256String(token, "your-256-bit-secret")
+    name := jwt.claims.get("name") as string else {
+        panic("Missing or malformed name in claims")
+    }
+
+    Assert.equal(name, "John Doe")
+}
+
+export function testVerifyJwtHs256Bytes(): void {
+    token := "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjMifQ.ZjfNiRshnSbF4iYwt1MtAQat8zRdUCKNyfXJdsfM8b0"
+    key: readonly byte[] := [115, 101, 99, 114, 101, 116]
+    jwt := try! verifyJwtHs256(token, key)
+    sub := jwt.claims.get("sub") as string else {
+        panic("Missing or malformed sub in claims")
+    }
+
+    Assert.equal(sub, "123")
+}
+
+export function testVerifyJwtHs256RejectsInvalidSignature(): void {
+    token := "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjMifQ.ZjfNiRshnSbF4iYwt1MtAQat8zRdUCKNyfXJdsfM8b0"
+    Assert.isTrue(isFailure(verifyJwtHs256String(token, "wrong-secret")))
+}
+
+export function testVerifyJwtHs256RejectsAlgorithmMismatch(): void {
+    token := "eyJhbGciOiJub25lIn0.eyJzdWIiOiIxMjMifQ."
+    Assert.isTrue(isFailure(verifyJwtHs256String(token, "secret")))
+}

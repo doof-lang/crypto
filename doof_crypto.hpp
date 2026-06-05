@@ -59,6 +59,10 @@ std::shared_ptr<std::vector<uint8_t>> hmac_sha256(
 	const std::shared_ptr<std::vector<uint8_t>>& data
 );
 std::shared_ptr<std::vector<uint8_t>> hmac_sha256_utf8(const std::string& key, const std::string& text);
+bool timing_safe_equal(
+	const std::shared_ptr<std::vector<uint8_t>>& a,
+	const std::shared_ptr<std::vector<uint8_t>>& b
+);
 std::string encode_base64(const std::shared_ptr<std::vector<uint8_t>>& data);
 doof::Result<std::shared_ptr<std::vector<uint8_t>>, std::string> decode_base64(const std::string& text);
 std::string encode_base64_url(const std::shared_ptr<std::vector<uint8_t>>& data);

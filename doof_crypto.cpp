@@ -575,6 +575,24 @@ std::shared_ptr<std::vector<uint8_t>> hmac_sha256_utf8(const std::string& key, c
     return hmac_sha256(bytes_from_string(key), bytes_from_string(text));
 }
 
+bool timing_safe_equal(
+    const std::shared_ptr<std::vector<uint8_t>>& a,
+    const std::shared_ptr<std::vector<uint8_t>>& b
+) {
+    const std::size_t a_size = a ? a->size() : 0u;
+    const std::size_t b_size = b ? b->size() : 0u;
+    const std::size_t max_size = std::max(a_size, b_size);
+
+    uint8_t diff = static_cast<uint8_t>(a_size ^ b_size);
+    for (std::size_t index = 0; index < max_size; ++index) {
+        const uint8_t a_byte = index < a_size ? (*a)[index] : 0u;
+        const uint8_t b_byte = index < b_size ? (*b)[index] : 0u;
+        diff = static_cast<uint8_t>(diff | (a_byte ^ b_byte));
+    }
+
+    return diff == 0u;
+}
+
 std::string encode_base64(const std::shared_ptr<std::vector<uint8_t>>& data) {
     return encode_base64_impl(data, kBase64Alphabet, true);
 }

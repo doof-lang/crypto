@@ -1,5 +1,5 @@
 import { parseJsonValue } from "std/json"
-import { BlobReader } from "std/blob"
+import { BlobBuilder, BlobReader } from "std/blob"
 
 export import function sha1(data: readonly byte[]): readonly byte[] from "doof_crypto.hpp" as doof_crypto::sha1_bytes
 export import function sha1String(text: string): readonly byte[] from "doof_crypto.hpp" as doof_crypto::sha1_utf8
@@ -14,6 +14,10 @@ export import function blobStreamToSha256(source: Stream<readonly byte[]>): read
 
 export import function hmacSha256(key: readonly byte[], data: readonly byte[]): readonly byte[] from "doof_crypto.hpp" as doof_crypto::hmac_sha256
 export import function hmacSha256String(key: string, text: string): readonly byte[] from "doof_crypto.hpp" as doof_crypto::hmac_sha256_utf8
+export function hmacSha256Hex(key: readonly byte[], data: readonly byte[]): string => encodeHex(hmacSha256(key, data))
+export function hmacSha256HexString(key: string, text: string): string => encodeHex(hmacSha256String(key, text))
+export function hmacSha256Base64Url(key: readonly byte[], data: readonly byte[]): string => encodeBase64Url(hmacSha256(key, data))
+export import function timingSafeEqual(a: readonly byte[], b: readonly byte[]): bool from "doof_crypto.hpp" as doof_crypto::timing_safe_equal
 
 export import function encodeHex(data: readonly byte[]): string from "doof_crypto.hpp" as doof_crypto::encode_hex
 export import function decodeHex(text: string): Result<readonly byte[], string> from "doof_crypto.hpp" as doof_crypto::decode_hex
@@ -46,6 +50,12 @@ export function decodeBase64UrlToString(text: string): Result<string, string> {
     }
     reader := BlobReader(blob)
     return { value: reader.readString(reader.length()) }
+}
+
+function stringToBytes(text: string): readonly byte[] {
+    builder := BlobBuilder()
+    builder.writeString(text)
+    return builder.build()
 }
 
 export function parseJwt(token: string): Result<Jwt, JwtError> {
@@ -90,4 +100,28 @@ export function parseJwt(token: string): Result<Jwt, JwtError> {
         }
     }
 
+}
+
+export function verifyJwtHs256(token: string, key: readonly byte[]): Result<Jwt, JwtError> {
+    jwt := parseJwt(token) else {
+        return { error: jwt.error }
+    }
+
+    alg := jwt.header.get("alg") as string else {
+        return { error: .AlgorithmMismatch }
+    }
+    if alg != "HS256" {
+        return { error: .AlgorithmMismatch }
+    }
+
+    expectedSignature := hmacSha256(key, stringToBytes(jwt.signedContent))
+    if !timingSafeEqual(jwt.signature, expectedSignature) {
+        return { error: .SignatureInvalid }
+    }
+
+    return { value: jwt }
+}
+
+export function verifyJwtHs256String(token: string, key: string): Result<Jwt, JwtError> {
+    return verifyJwtHs256(token, stringToBytes(key))
 }
