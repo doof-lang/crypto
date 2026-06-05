@@ -8,6 +8,7 @@
 #include <memory>
 #include <stdlib.h>
 #include <string>
+#include <utility>
 #include <vector>
 
 namespace doof_crypto {
@@ -136,6 +137,13 @@ int base64_value(char ch, bool url_safe) {
 
 std::shared_ptr<std::vector<uint8_t>> bytes_from_string(const std::string& text) {
     return std::make_shared<std::vector<uint8_t>>(text.begin(), text.end());
+}
+
+void secure_zero(std::vector<uint8_t>& data) {
+    volatile uint8_t* cursor = data.data();
+    for (std::size_t index = 0; index < data.size(); ++index) {
+        cursor[index] = 0u;
+    }
 }
 
 void consume_sha1_block(std::array<uint32_t, 5>& state, const uint8_t* block) {
@@ -446,6 +454,54 @@ doof::Result<std::shared_ptr<std::vector<uint8_t>>, std::string> decode_base64_i
 
 }  // namespace
 
+SecretBytes::SecretBytes(std::vector<uint8_t> data)
+    : data_(std::move(data)) {
+}
+
+std::shared_ptr<SecretBytes> SecretBytes::random(int32_t length) {
+    if (length < 0) {
+        panic_argument("secret byte length must not be negative");
+    }
+
+    std::vector<uint8_t> bytes(static_cast<std::size_t>(length));
+    if (length > 0) {
+        ::arc4random_buf(bytes.data(), bytes.size());
+    }
+    return std::shared_ptr<SecretBytes>(new SecretBytes(std::move(bytes)));
+}
+
+std::shared_ptr<SecretBytes> SecretBytes::steal(const std::shared_ptr<std::vector<uint8_t>>& data) {
+    std::vector<uint8_t> stolen;
+    if (data && !data->empty()) {
+        stolen.assign(data->begin(), data->end());
+        secure_zero(*data);
+    }
+    return std::shared_ptr<SecretBytes>(new SecretBytes(std::move(stolen)));
+}
+
+SecretBytes::~SecretBytes() {
+    wipe();
+}
+
+void SecretBytes::wipe() {
+    secure_zero(data_);
+}
+
+std::shared_ptr<std::vector<uint8_t>> SecretBytes::bytes() {
+    return std::make_shared<std::vector<uint8_t>>(data_.begin(), data_.end());
+}
+
+int32_t SecretBytes::length() {
+    if (data_.size() > static_cast<std::size_t>(std::numeric_limits<int32_t>::max())) {
+        panic_argument("secret byte length exceeds int range");
+    }
+    return static_cast<int32_t>(data_.size());
+}
+
+const std::vector<uint8_t>& SecretBytes::unsafe_bytes() const {
+    return data_;
+}
+
 NativeSha256Hasher::NativeSha256Hasher()
     : state_(kSha256InitialState), total_bytes_(0u), finished_(false) {
     buffer_.reserve(64u);
@@ -540,16 +596,19 @@ std::shared_ptr<std::vector<uint8_t>> sha256_utf8(const std::string& text) {
 }
 
 std::shared_ptr<std::vector<uint8_t>> hmac_sha256(
-    const std::shared_ptr<std::vector<uint8_t>>& key,
+    const std::shared_ptr<SecretBytes>& key,
     const std::shared_ptr<std::vector<uint8_t>>& data
 ) {
+    const std::vector<uint8_t>* key_bytes = key ? &key->unsafe_bytes() : nullptr;
     std::vector<uint8_t> key_block(kSha256BlockSize, 0u);
-    if (key && !key->empty()) {
-        if (key->size() > kSha256BlockSize) {
-            const auto hashed_key = sha256_bytes(key);
+    if (key_bytes && !key_bytes->empty()) {
+        if (key_bytes->size() > kSha256BlockSize) {
+            const auto key_copy = std::make_shared<std::vector<uint8_t>>(key_bytes->begin(), key_bytes->end());
+            const auto hashed_key = sha256_bytes(key_copy);
             std::copy(hashed_key->begin(), hashed_key->end(), key_block.begin());
+            secure_zero(*key_copy);
         } else {
-            std::copy(key->begin(), key->end(), key_block.begin());
+            std::copy(key_bytes->begin(), key_bytes->end(), key_block.begin());
         }
     }
 
@@ -568,11 +627,12 @@ std::shared_ptr<std::vector<uint8_t>> hmac_sha256(
     auto outer = NativeSha256Hasher::create();
     outer->update(outer_pad);
     outer->update(inner_digest);
-    return outer->finish();
-}
+    auto digest = outer->finish();
 
-std::shared_ptr<std::vector<uint8_t>> hmac_sha256_utf8(const std::string& key, const std::string& text) {
-    return hmac_sha256(bytes_from_string(key), bytes_from_string(text));
+    secure_zero(key_block);
+    secure_zero(*inner_pad);
+    secure_zero(*outer_pad);
+    return digest;
 }
 
 bool timing_safe_equal(

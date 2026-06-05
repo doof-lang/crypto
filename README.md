@@ -2,7 +2,7 @@
 
 Small cryptographic primitives for Doof.
 
-This package provides SHA-1 and SHA-256 digests, HMAC-SHA-256, JWT HS256 verification, random byte generation, UUID v4 generation, and text encoding utilities so packages can hash payloads, verify fixtures, generate identifiers, and move binary values through text-based interfaces.
+This package provides SHA-1 and SHA-256 digests, HMAC-SHA-256, JWT HS256 verification, secret byte storage, random byte generation, UUID v4 generation, and text encoding utilities so packages can hash payloads, verify fixtures, generate identifiers, and move binary values through text-based interfaces.
 
 ## Examples
 
@@ -38,35 +38,40 @@ println(encodeHex(digest))
 
 `blobStreamToSha256(source)` accepts `Stream<readonly byte[]>` and hashes the concatenation of all bytes produced by the stream.
 
-### Generate random bytes and a UUID
+### Generate secret random bytes and a UUID
 
 ```doof
-import { randomBytes, uuidV4, encodeHex } from "std/crypto"
+import { SecretBytes, uuidV4, encodeHex } from "std/crypto"
 
-nonce := randomBytes(16)
+nonce := SecretBytes.random(16)
 requestId := uuidV4()
 
-println(encodeHex(nonce))
+println(encodeHex(nonce.bytes()))
 println(requestId) // RFC 4122 v4, lowercase
 ```
+
+`SecretBytes` owns sensitive bytes and zeroes its native buffer when `wipe()` is called or when the last reference is destroyed. `bytes()` returns a copy for APIs that need ordinary `readonly byte[]` values.
 
 ### HMAC (SHA-256)
 
 ```doof
-import { hmacSha256String, encodeHex } from "std/crypto"
+import { SecretBytes, hmacSha256, encodeHex } from "std/crypto"
 
-mac := hmacSha256String("secret-key", "message") // raw bytes
+key := SecretBytes.steal([115, 101, 99, 114, 101, 116])
+payload: readonly byte[] := [109, 101, 115, 115, 97, 103, 101]
+mac := hmacSha256(key, payload) // raw bytes
 println(encodeHex(mac))
 ```
 
-Use `hmacSha256(key: readonly byte[], data: readonly byte[])` when your key is binary; use `hmacSha256String` when you have a UTF-8 key. `hmacSha256Hex`, `hmacSha256HexString`, and `hmacSha256Base64Url` return common text encodings directly.
+Use `SecretBytes.steal(...)` or `SecretBytes.random(...)` to create keys. `hmacSha256Hex` and `hmacSha256Base64Url` return common text encodings directly.
 
 ### Verify a JWT signed with HS256
 
 ```doof
-import { verifyJwtHs256String } from "std/crypto"
+import { SecretBytes, verifyJwtHs256 } from "std/crypto"
 
-jwt := verifyJwtHs256String(token, "secret") else {
+key := SecretBytes.steal([115, 101, 99, 114, 101, 116])
+jwt := verifyJwtHs256(token, key) else {
 	println("invalid token")
 	return
 }
@@ -74,14 +79,14 @@ jwt := verifyJwtHs256String(token, "secret") else {
 println(jwt.signedContent)
 ```
 
-Use `verifyJwtHs256(token, keyBytes)` when the HMAC key is binary.
+`verifyJwtHs256` always takes a `SecretBytes` key.
 
 ### Base64 and Base64Url
 
 ```doof
-import { encodeBase64, decodeBase64, encodeBase64Url, decodeBase64Url } from "std/crypto"
+import { SecretBytes, encodeBase64, decodeBase64, encodeBase64Url, decodeBase64Url } from "std/crypto"
 
-blob := randomBytes(8)
+blob := SecretBytes.random(8).bytes()
 b64 := encodeBase64(blob)
 decoded := try! decodeBase64(b64)
 println(decoded.length)
@@ -139,32 +144,34 @@ println(decoded.length)
 	- Returns the lowercase hexadecimal representation of the SHA-256 digest for `data`.
 - `sha256HexString(text: string) -> string`
 	- Convenience: SHA-256 of `text` (UTF-8) as lowercase hex.
-- `streamToSha256(source: Stream<readonly byte[]>) -> readonly byte[]`
+- `blobStreamToSha256(source: Stream<readonly byte[]>) -> readonly byte[]`
 	- Incrementally hashes the concatenated bytes from `source` and returns the 32-byte digest.
-- `hmacSha256(key: readonly byte[], data: readonly byte[]) -> readonly byte[]`
-	- Computes HMAC-SHA-256 over `data` using binary `key`.
-- `hmacSha256String(key: string, text: string) -> readonly byte[]`
-	- Computes HMAC-SHA-256 over UTF-8 `text` using UTF-8 `key`.
-- `hmacSha256Hex(key: readonly byte[], data: readonly byte[]) -> string`
+- `SecretBytes.random(length: int) -> SecretBytes`
+	- Returns cryptographically-strong random bytes owned by a `SecretBytes` value.
+- `SecretBytes.steal(data: readonly byte[]) -> SecretBytes`
+	- Copies `data` into secret storage and zeroes the source buffer passed to the native bridge.
+- `SecretBytes#wipe() -> void`
+	- Zeroes the owned native buffer immediately.
+- `SecretBytes#bytes() -> readonly byte[]`
+	- Returns a copy of the owned bytes.
+- `hmacSha256(key: SecretBytes, data: readonly byte[]) -> readonly byte[]`
+	- Computes HMAC-SHA-256 over `data` using secret binary `key`.
+- `hmacSha256Hex(key: SecretBytes, data: readonly byte[]) -> string`
 	- Computes HMAC-SHA-256 and returns lowercase hex.
-- `hmacSha256HexString(key: string, text: string) -> string`
-	- Computes HMAC-SHA-256 over UTF-8 `text` using UTF-8 `key` and returns lowercase hex.
-- `hmacSha256Base64Url(key: readonly byte[], data: readonly byte[]) -> string`
+- `hmacSha256Base64Url(key: SecretBytes, data: readonly byte[]) -> string`
 	- Computes HMAC-SHA-256 and returns unpadded base64url.
 - `timingSafeEqual(a: readonly byte[], b: readonly byte[]) -> bool`
 	- Compares byte arrays without data-dependent early exit.
-- `randomBytes(length: int) -> readonly byte[]`
-	- Returns cryptographically-strong random bytes of the requested `length`.
+- `randomBytes(length: int) -> SecretBytes`
+	- Alias for `SecretBytes.random(length)`.
 - `uuidV4() -> string`
 	- Returns a lowercase RFC 4122 version 4 UUID string.
 - `encodeHex(data: readonly byte[]) -> string`
 	- Converts `data` to lowercase hexadecimal.
 - `decodeHex(text: string) -> Result<readonly byte[], string>`
 	- Parses hexadecimal (upper- or lower-case) into bytes; returns `Err` with an error message on invalid input.
-- `verifyJwtHs256(token: string, key: readonly byte[]) -> Result<Jwt, JwtError>`
-	- Parses and verifies an HS256 JWT using a binary key.
-- `verifyJwtHs256String(token: string, key: string) -> Result<Jwt, JwtError>`
-	- Parses and verifies an HS256 JWT using a UTF-8 key.
+- `verifyJwtHs256(token: string, key: SecretBytes) -> Result<Jwt, JwtError>`
+	- Parses and verifies an HS256 JWT using a secret binary key.
 
 ## Notes
 

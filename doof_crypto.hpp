@@ -11,6 +11,25 @@
 
 namespace doof_crypto {
 
+class SecretBytes {
+public:
+	static std::shared_ptr<SecretBytes> random(int32_t length);
+	static std::shared_ptr<SecretBytes> steal(const std::shared_ptr<std::vector<uint8_t>>& data);
+
+	~SecretBytes();
+
+	void wipe();
+	std::shared_ptr<std::vector<uint8_t>> bytes();
+	int32_t length();
+
+	const std::vector<uint8_t>& unsafe_bytes() const;
+
+private:
+	explicit SecretBytes(std::vector<uint8_t> data);
+
+	std::vector<uint8_t> data_;
+};
+
 class NativeSha256Hasher {
 public:
 	static std::shared_ptr<NativeSha256Hasher> create();
@@ -55,10 +74,9 @@ std::shared_ptr<std::vector<uint8_t>> sha1_utf8(const std::string& text);
 std::shared_ptr<std::vector<uint8_t>> sha256_bytes(const std::shared_ptr<std::vector<uint8_t>>& data);
 std::shared_ptr<std::vector<uint8_t>> sha256_utf8(const std::string& text);
 std::shared_ptr<std::vector<uint8_t>> hmac_sha256(
-	const std::shared_ptr<std::vector<uint8_t>>& key,
+	const std::shared_ptr<SecretBytes>& key,
 	const std::shared_ptr<std::vector<uint8_t>>& data
 );
-std::shared_ptr<std::vector<uint8_t>> hmac_sha256_utf8(const std::string& key, const std::string& text);
 bool timing_safe_equal(
 	const std::shared_ptr<std::vector<uint8_t>>& a,
 	const std::shared_ptr<std::vector<uint8_t>>& b
