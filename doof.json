@@ -13,8 +13,5 @@
     }
   },
   "dependencies": {
-    "std/stream": {
-      "path": "../stream"
-    }
   }
 }
