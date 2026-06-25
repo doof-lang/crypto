@@ -4,6 +4,11 @@ Small cryptographic primitives for Doof.
 
 This package provides SHA-1 and SHA-256 digests, HMAC-SHA-256, JWT HS256 verification, secret byte storage, random byte generation, UUID v4 generation, and text encoding utilities so packages can hash payloads, verify fixtures, generate identifiers, and move binary values through text-based interfaces.
 
+## Documentation
+
+- [Guide and API reference](docs/API.md) explains hashing, HMAC, secret bytes, encodings, JWT handling, random IDs, and comparison safety.
+- Tests can be run with `doof test crypto`.
+
 ## Examples
 
 ### Hash UTF-8 text
