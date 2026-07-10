@@ -344,9 +344,7 @@ doof::Result<std::shared_ptr<std::vector<uint8_t>>, std::string> decode_base64_i
             continue;
         }
         if (base64_value(ch, url_safe) < 0) {
-            return doof::Result<std::shared_ptr<std::vector<uint8_t>>, std::string>::failure(
-                "Base64 text contains a non-base64 character at position " + std::to_string(index)
-            );
+            return doof::Failure<std::string>{"Base64 text contains a non-base64 character at position " + std::to_string(index)};
         }
     }
 
@@ -355,22 +353,16 @@ doof::Result<std::shared_ptr<std::vector<uint8_t>>, std::string> decode_base64_i
     if (first_padding != std::string::npos) {
         for (std::size_t index = first_padding; index < normalized.size(); ++index) {
             if (normalized[index] != '=') {
-                return doof::Result<std::shared_ptr<std::vector<uint8_t>>, std::string>::failure(
-                    "Base64 padding may only appear at the end"
-                );
+                return doof::Failure<std::string>{"Base64 padding may only appear at the end"};
             }
         }
         if ((normalized.size() % 4u) != 0u) {
-            return doof::Result<std::shared_ptr<std::vector<uint8_t>>, std::string>::failure(
-                "Base64 text has invalid padding"
-            );
+            return doof::Failure<std::string>{"Base64 text has invalid padding"};
         }
     } else {
         const std::size_t remainder = normalized.size() % 4u;
         if (remainder == 1u) {
-            return doof::Result<std::shared_ptr<std::vector<uint8_t>>, std::string>::failure(
-                "Base64 text has an invalid length"
-            );
+            return doof::Failure<std::string>{"Base64 text has an invalid length"};
         }
         if (remainder > 0u) {
             normalized.append(4u - remainder, '=');
@@ -387,9 +379,7 @@ doof::Result<std::shared_ptr<std::vector<uint8_t>>, std::string> decode_base64_i
         const char c3 = normalized[offset + 3u];
 
         if (c0 == '=' || c1 == '=') {
-            return doof::Result<std::shared_ptr<std::vector<uint8_t>>, std::string>::failure(
-                "Base64 text has invalid padding"
-            );
+            return doof::Failure<std::string>{"Base64 text has invalid padding"};
         }
 
         const int v0 = base64_value(c0, url_safe);
@@ -397,41 +387,27 @@ doof::Result<std::shared_ptr<std::vector<uint8_t>>, std::string> decode_base64_i
         const int v2 = c2 == '=' ? 0 : base64_value(c2, url_safe);
         const int v3 = c3 == '=' ? 0 : base64_value(c3, url_safe);
         if (v0 < 0 || v1 < 0 || v2 < 0 || v3 < 0) {
-            return doof::Result<std::shared_ptr<std::vector<uint8_t>>, std::string>::failure(
-                "Base64 text contains a non-base64 character"
-            );
+            return doof::Failure<std::string>{"Base64 text contains a non-base64 character"};
         }
 
         const int padding = (c2 == '=' ? 1 : 0) + (c3 == '=' ? 1 : 0);
         if (padding == 1 && c3 != '=') {
-            return doof::Result<std::shared_ptr<std::vector<uint8_t>>, std::string>::failure(
-                "Base64 text has invalid padding"
-            );
+            return doof::Failure<std::string>{"Base64 text has invalid padding"};
         }
         if (padding == 2 && c2 != '=') {
-            return doof::Result<std::shared_ptr<std::vector<uint8_t>>, std::string>::failure(
-                "Base64 text has invalid padding"
-            );
+            return doof::Failure<std::string>{"Base64 text has invalid padding"};
         }
         if (padding > 2) {
-            return doof::Result<std::shared_ptr<std::vector<uint8_t>>, std::string>::failure(
-                "Base64 text has invalid padding"
-            );
+            return doof::Failure<std::string>{"Base64 text has invalid padding"};
         }
         if (padding > 0 && offset + 4u != normalized.size()) {
-            return doof::Result<std::shared_ptr<std::vector<uint8_t>>, std::string>::failure(
-                "Base64 padding may only appear at the end"
-            );
+            return doof::Failure<std::string>{"Base64 padding may only appear at the end"};
         }
         if (padding == 1 && (v2 & 0x03) != 0) {
-            return doof::Result<std::shared_ptr<std::vector<uint8_t>>, std::string>::failure(
-                "Base64 text has invalid trailing bits"
-            );
+            return doof::Failure<std::string>{"Base64 text has invalid trailing bits"};
         }
         if (padding == 2 && (v1 & 0x0f) != 0) {
-            return doof::Result<std::shared_ptr<std::vector<uint8_t>>, std::string>::failure(
-                "Base64 text has invalid trailing bits"
-            );
+            return doof::Failure<std::string>{"Base64 text has invalid trailing bits"};
         }
 
         const uint32_t block =
@@ -449,7 +425,7 @@ doof::Result<std::shared_ptr<std::vector<uint8_t>>, std::string> decode_base64_i
         }
     }
 
-    return doof::Result<std::shared_ptr<std::vector<uint8_t>>, std::string>::success(decoded);
+    return doof::Success<std::shared_ptr<std::vector<uint8_t>>>{decoded};
 }
 
 }  // namespace
@@ -709,9 +685,7 @@ std::string encode_hex(const std::shared_ptr<std::vector<uint8_t>>& data) {
 
 doof::Result<std::shared_ptr<std::vector<uint8_t>>, std::string> decode_hex(const std::string& text) {
     if ((text.size() % 2u) != 0u) {
-        return doof::Result<std::shared_ptr<std::vector<uint8_t>>, std::string>::failure(
-            "Hex text must have an even number of characters"
-        );
+        return doof::Failure<std::string>{"Hex text must have an even number of characters"};
     }
 
     auto decoded = std::make_shared<std::vector<uint8_t>>();
@@ -721,15 +695,13 @@ doof::Result<std::shared_ptr<std::vector<uint8_t>>, std::string> decode_hex(cons
         const int high = hex_value(text[index]);
         const int low = hex_value(text[index + 1u]);
         if (high < 0 || low < 0) {
-            return doof::Result<std::shared_ptr<std::vector<uint8_t>>, std::string>::failure(
-                "Hex text contains a non-hex character at position " + std::to_string(index)
-            );
+            return doof::Failure<std::string>{"Hex text contains a non-hex character at position " + std::to_string(index)};
         }
 
         decoded->push_back(static_cast<uint8_t>((high << 4) | low));
     }
 
-    return doof::Result<std::shared_ptr<std::vector<uint8_t>>, std::string>::success(decoded);
+    return doof::Success<std::shared_ptr<std::vector<uint8_t>>>{decoded};
 }
 
 }  // namespace doof_crypto
