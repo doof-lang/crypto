@@ -27,7 +27,7 @@ class ChunkStream implements Stream<readonly byte[]> {
     value(): readonly byte[] => this.currentValue
 }
 
-function assertBytes(actual: readonly byte[], expected: readonly byte[]): void {
+function assertBytes(actual: readonly byte[], expected: readonly byte[]): none {
     Assert.equal(actual.length, expected.length)
 
     for index of 0..<actual.length {
@@ -42,26 +42,26 @@ function isFailure<T, E>(result: Result<T, E>): bool {
     }
 }
 
-export function testEncodeHex(): void {
+export function testEncodeHex(): none {
     payload: readonly byte[] := [0, 1, 15, 16, 171, 255]
     Assert.equal(encodeHex(payload), "00010f10abff")
 }
 
-export function testDecodeHex(): void {
+export function testDecodeHex(): none {
     decoded := try! decodeHex("00010F10abff")
     expected: readonly byte[] := [0, 1, 15, 16, 171, 255]
     assertBytes(decoded, expected)
 }
 
-export function testDecodeHexRejectsOddLength(): void {
+export function testDecodeHexRejectsOddLength(): none {
     Assert.isTrue(isFailure(decodeHex("abc")))
 }
 
-export function testDecodeHexRejectsInvalidCharacter(): void {
+export function testDecodeHexRejectsInvalidCharacter(): none {
     Assert.isTrue(isFailure(decodeHex("0x")))
 }
 
-export function testSha1KnownVectorForEmptyBytes(): void {
+export function testSha1KnownVectorForEmptyBytes(): none {
     empty: readonly byte[] := []
     Assert.equal(
         sha1Hex(empty),
@@ -69,24 +69,24 @@ export function testSha1KnownVectorForEmptyBytes(): void {
     )
 }
 
-export function testSha1KnownVectorForString(): void {
+export function testSha1KnownVectorForString(): none {
     Assert.equal(
         sha1HexString("abc"),
         "a9993e364706816aba3e25717850c26c9cd0d89d"
     )
 }
 
-export function testSha1StringMatchesByteHash(): void {
+export function testSha1StringMatchesByteHash(): none {
     payload: readonly byte[] := [104, 101, 108, 108, 111]
     assertBytes(sha1String("hello"), sha1(payload))
 }
 
-export function testSha1Base64WebSocketAcceptVector(): void {
+export function testSha1Base64WebSocketAcceptVector(): none {
     digest := sha1String("dGhlIHNhbXBsZSBub25jZQ==258EAFA5-E914-47DA-95CA-C5AB0DC85B11")
     Assert.equal(encodeBase64(digest), "s3pPLMBiTxaQ9kYGzzhZRbK+xOo=")
 }
 
-export function testSha256KnownVectorForEmptyBytes(): void {
+export function testSha256KnownVectorForEmptyBytes(): none {
     empty: readonly byte[] := []
     Assert.equal(
         sha256Hex(empty),
@@ -94,19 +94,19 @@ export function testSha256KnownVectorForEmptyBytes(): void {
     )
 }
 
-export function testSha256KnownVectorForString(): void {
+export function testSha256KnownVectorForString(): none {
     Assert.equal(
         sha256HexString("abc"),
         "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
     )
 }
 
-export function testSha256StringMatchesByteHash(): void {
+export function testSha256StringMatchesByteHash(): none {
     payload: readonly byte[] := [104, 101, 108, 108, 111]
     assertBytes(sha256String("hello"), sha256(payload))
 }
 
-export function testStreamToSha256MatchesOneShotHash(): void {
+export function testStreamToSha256MatchesOneShotHash(): none {
     let stream: Stream<readonly byte[]> = ChunkStream {
         chunks: [
             [104, 101],
@@ -120,7 +120,7 @@ export function testStreamToSha256MatchesOneShotHash(): void {
     assertBytes(blobStreamToSha256(stream), sha256(payload))
 }
 
-export function testHmacSha256KnownVector(): void {
+export function testHmacSha256KnownVector(): none {
     key := SecretBytes.steal([107, 101, 121])
     payload: readonly byte[] := [
         84, 104, 101, 32, 113, 117, 105, 99, 107, 32, 98, 114, 111, 119,
@@ -135,7 +135,7 @@ export function testHmacSha256KnownVector(): void {
     )
 }
 
-export function testHmacSha256ReturnsRawBytes(): void {
+export function testHmacSha256ReturnsRawBytes(): none {
     key := SecretBytes.steal([107, 101, 121])
     payload: readonly byte[] := [
         84, 104, 101, 32, 113, 117, 105, 99, 107, 32, 98, 114, 111, 119,
@@ -146,7 +146,7 @@ export function testHmacSha256ReturnsRawBytes(): void {
     Assert.equal(hmacSha256(key, payload).length, 32)
 }
 
-export function testHmacSha256HexHelpers(): void {
+export function testHmacSha256HexHelpers(): none {
     key := SecretBytes.steal([107, 101, 121])
     payload: readonly byte[] := [
         84, 104, 101, 32, 113, 117, 105, 99, 107, 32, 98, 114, 111, 119,
@@ -159,13 +159,13 @@ export function testHmacSha256HexHelpers(): void {
     Assert.equal(hmacSha256Hex(key, payload), expected)
 }
 
-export function testHmacSha256Base64Url(): void {
+export function testHmacSha256Base64Url(): none {
     key := SecretBytes.steal([107, 101, 121])
     payload: readonly byte[] := [100, 97, 116, 97]
     Assert.equal(hmacSha256Base64Url(key, payload), "UDH-PZicbRU3oBP6bnOdojRj_a7DtwE32Cjjas4iG9A")
 }
 
-export function testTimingSafeEqual(): void {
+export function testTimingSafeEqual(): none {
     a: readonly byte[] := [1, 2, 3]
     same: readonly byte[] := [1, 2, 3]
     differentValue: readonly byte[] := [1, 2, 4]
@@ -176,53 +176,53 @@ export function testTimingSafeEqual(): void {
     Assert.isFalse(timingSafeEqual(a, differentLength))
 }
 
-export function testEncodeBase64(): void {
+export function testEncodeBase64(): none {
     payload: readonly byte[] := [104, 101, 108, 108, 111]
     Assert.equal(encodeBase64(payload), "aGVsbG8=")
 }
 
-export function testDecodeBase64(): void {
+export function testDecodeBase64(): none {
     payload: readonly byte[] := [104, 101, 108, 108, 111]
     assertBytes(try! decodeBase64("aGVsbG8="), payload)
     assertBytes(try! decodeBase64("aGVsbG8"), payload)
 }
 
-export function testEncodeBase64Url(): void {
+export function testEncodeBase64Url(): none {
     payload: readonly byte[] := [251, 239, 255]
     Assert.equal(encodeBase64Url(payload), "--__")
 }
 
-export function testDecodeBase64Url(): void {
+export function testDecodeBase64Url(): none {
     payload: readonly byte[] := [251, 239, 255]
     assertBytes(try! decodeBase64Url("--__"), payload)
 }
 
-export function testDecodeBase64RejectsInvalidCharacter(): void {
+export function testDecodeBase64RejectsInvalidCharacter(): none {
     Assert.isTrue(isFailure(decodeBase64("aGVsbG8!")))
 }
 
-export function testRandomBytesLength(): void {
+export function testRandomBytesLength(): none {
     generated := randomBytes(24)
     Assert.equal(generated.length(), 24)
     Assert.equal(generated.bytes().length, 24)
 }
 
-export function testRandomBytesZeroLength(): void {
+export function testRandomBytesZeroLength(): none {
     Assert.equal(randomBytes(0).length(), 0)
 }
 
-export function testSecretBytesStealAndBytes(): void {
+export function testSecretBytesStealAndBytes(): none {
     secret := SecretBytes.steal([1, 2, 3])
     assertBytes(secret.bytes(), [1, 2, 3])
 }
 
-export function testSecretBytesWipe(): void {
+export function testSecretBytesWipe(): none {
     secret := SecretBytes.steal([1, 2, 3])
     secret.wipe()
     assertBytes(secret.bytes(), [0, 0, 0])
 }
 
-export function testUuidV4Shape(): void {
+export function testUuidV4Shape(): none {
     uuid := uuidV4()
     Assert.equal(uuid.length, 36)
     Assert.equal(string(uuid.charAt(8)), "-")
@@ -239,7 +239,7 @@ export function testUuidV4Shape(): void {
     Assert.equal((try! decodeHex(compact)).length, 16)
 }
 
-export function testParseJwt(): void {
+export function testParseJwt(): none {
     token := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"  
     jwt := try! parseJwt(token)
     alg := jwt.header.get("alg") as string else {
@@ -260,7 +260,7 @@ export function testParseJwt(): void {
     Assert.equal(iat, 1516239022)
 }  
 
-export function testVerifyJwtHs256(): void {
+export function testVerifyJwtHs256(): none {
     token := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"
     key := SecretBytes.steal([
         121, 111, 117, 114, 45, 50, 53, 54, 45, 98, 105, 116, 45,
@@ -274,7 +274,7 @@ export function testVerifyJwtHs256(): void {
     Assert.equal(name, "John Doe")
 }
 
-export function testVerifyJwtHs256Bytes(): void {
+export function testVerifyJwtHs256Bytes(): none {
     token := "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjMifQ.ZjfNiRshnSbF4iYwt1MtAQat8zRdUCKNyfXJdsfM8b0"
     key := SecretBytes.steal([115, 101, 99, 114, 101, 116])
     jwt := try! verifyJwtHs256(token, key)
@@ -285,13 +285,13 @@ export function testVerifyJwtHs256Bytes(): void {
     Assert.equal(sub, "123")
 }
 
-export function testVerifyJwtHs256RejectsInvalidSignature(): void {
+export function testVerifyJwtHs256RejectsInvalidSignature(): none {
     token := "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjMifQ.ZjfNiRshnSbF4iYwt1MtAQat8zRdUCKNyfXJdsfM8b0"
     key := SecretBytes.steal([119, 114, 111, 110, 103, 45, 115, 101, 99, 114, 101, 116])
     Assert.isTrue(isFailure(verifyJwtHs256(token, key)))
 }
 
-export function testVerifyJwtHs256RejectsAlgorithmMismatch(): void {
+export function testVerifyJwtHs256RejectsAlgorithmMismatch(): none {
     token := "eyJhbGciOiJub25lIn0.eyJzdWIiOiIxMjMifQ."
     key := SecretBytes.steal([115, 101, 99, 114, 101, 116])
     Assert.isTrue(isFailure(verifyJwtHs256(token, key)))

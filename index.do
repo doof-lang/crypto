@@ -4,7 +4,7 @@ import { BlobBuilder, BlobReader } from "std/blob"
 export import class SecretBytes from "doof_crypto.hpp" as doof_crypto::SecretBytes {
     isolated static random(length: int): SecretBytes
     isolated static steal(data: readonly byte[]): SecretBytes
-    isolated wipe(): void
+    isolated wipe(): none
     isolated bytes(): readonly byte[]
     isolated length(): int
 }
