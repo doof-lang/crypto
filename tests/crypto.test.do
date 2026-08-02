@@ -20,7 +20,7 @@ class ChunkStream implements Stream<readonly byte[]> {
 
         chunk := this.chunks[this.index]
         this.index = this.index + 1
-        this.currentValue = chunk.buildReadonly()
+        this.currentValue = chunk.drainToReadonly()
         return true
     }
 
