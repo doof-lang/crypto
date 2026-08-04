@@ -11,6 +11,13 @@
 #include <utility>
 #include <vector>
 
+#if defined(_WIN32)
+#define NOMINMAX
+#include <windows.h>
+#include <bcrypt.h>
+#pragma comment(lib, "bcrypt.lib")
+#endif
+
 namespace doof_crypto {
 
 namespace {
@@ -19,6 +26,21 @@ constexpr std::size_t kSha1BlockSize = 64u;
 constexpr std::size_t kSha256BlockSize = 64u;
 constexpr char kBase64Alphabet[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 constexpr char kBase64UrlAlphabet[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_";
+
+void secure_random_bytes(uint8_t* data, std::size_t size) {
+#if defined(_WIN32)
+    while (size > 0) {
+        const ULONG chunk = static_cast<ULONG>(std::min<std::size_t>(size, std::numeric_limits<ULONG>::max()));
+        if (::BCryptGenRandom(nullptr, data, chunk, BCRYPT_USE_SYSTEM_PREFERRED_RNG) != 0) {
+            doof::panic("Failed to obtain secure random bytes from Windows");
+        }
+        data += chunk;
+        size -= chunk;
+    }
+#else
+    ::arc4random_buf(data, size);
+#endif
+}
 
 constexpr std::array<uint32_t, 64> kSha256Table = {
     0x428a2f98u, 0x71374491u, 0xb5c0fbcfu, 0xe9b5dba5u,
@@ -441,7 +463,7 @@ std::shared_ptr<SecretBytes> SecretBytes::random(int32_t length) {
 
     std::vector<uint8_t> bytes(static_cast<std::size_t>(length));
     if (length > 0) {
-        ::arc4random_buf(bytes.data(), bytes.size());
+        secure_random_bytes(bytes.data(), bytes.size());
     }
     return std::shared_ptr<SecretBytes>(new SecretBytes(std::move(bytes)));
 }
@@ -652,7 +674,7 @@ std::shared_ptr<std::vector<uint8_t>> random_bytes(int32_t length) {
 
     auto bytes = std::make_shared<std::vector<uint8_t>>(static_cast<std::size_t>(length));
     if (length > 0) {
-        ::arc4random_buf(bytes->data(), bytes->size());
+        secure_random_bytes(bytes->data(), bytes->size());
     }
     return bytes;
 }
