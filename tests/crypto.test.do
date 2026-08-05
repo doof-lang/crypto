@@ -10,8 +10,8 @@ import {
 
 class ChunkStream implements Stream<readonly byte[]> {
     chunks: byte[][]
-    index: int = 0
-    currentValue: readonly byte[] = []
+    let index: int = 0
+    let currentValue: readonly byte[] = []
 
     next(): bool {
         if this.index >= this.chunks.length {
