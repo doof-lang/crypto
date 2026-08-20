@@ -1,8 +1,9 @@
 # std/crypto Guide
 
 `std/crypto` provides small cryptographic building blocks for Doof programs:
-SHA digests, HMAC-SHA-256, secret byte storage, random bytes, UUID v4
-generation, hex/base64 encodings, and HS256 JWT parsing and verification.
+SHA digests, incremental SHA-256 hashing, HMAC-SHA-256, secret byte storage,
+random bytes and tokens, UUID v4 generation, hex/base64 encodings, and HS256
+JWT parsing and verification.
 
 The package is intentionally focused. It does not provide public-key
 cryptography, password hashing, encryption modes, or a full JWT validation
@@ -239,11 +240,28 @@ export function sha256(data: readonly byte[]): readonly byte[]
 export function sha256String(text: string): readonly byte[]
 export function sha256Hex(data: readonly byte[]): string
 export function sha256HexString(text: string): string
+export function sha256Base64(data: readonly byte[]): string
+export function sha256Base64String(text: string): string
+export function sha256Base64Url(data: readonly byte[]): string
+export function sha256Base64UrlString(text: string): string
 export function blobStreamToSha256(source: Stream<readonly byte[]>): readonly byte[]
 ```
 
 SHA-1 returns 20 bytes. SHA-256 returns 32 bytes. Hex helpers return lowercase
-text.
+text, Base64 helpers return padded text, and Base64URL helpers return unpadded
+URL-safe text.
+
+### `Sha256Hasher`
+
+```doof
+hasher := Sha256Hasher.create()
+hasher.update(firstChunk)
+hasher.update(secondChunk)
+digest := hasher.finish()
+```
+
+`finish()` returns the 32-byte digest and is idempotent. Calling `update()`
+after `finish()` is a programmer error and panics.
 
 ### `SecretBytes`
 
@@ -264,19 +282,29 @@ Methods:
 ```doof
 export function hmacSha256(key: SecretBytes, data: readonly byte[]): readonly byte[]
 export function hmacSha256Hex(key: SecretBytes, data: readonly byte[]): string
+export function hmacSha256Base64(key: SecretBytes, data: readonly byte[]): string
 export function hmacSha256Base64Url(key: SecretBytes, data: readonly byte[]): string
+export function hmacSha256String(key: SecretBytes, text: string): readonly byte[]
+export function hmacSha256HexString(key: SecretBytes, text: string): string
+export function hmacSha256Base64String(key: SecretBytes, text: string): string
+export function hmacSha256Base64UrlString(key: SecretBytes, text: string): string
 export function timingSafeEqual(a: readonly byte[], b: readonly byte[]): bool
 ```
+
+The `*String` forms authenticate the UTF-8 bytes of `text`.
 
 ### Random Identifiers
 
 ```doof
 export function randomBytes(length: int): SecretBytes
+export function randomToken(byteLength: int): string
 export function uuidV4(): string
 ```
 
-`randomBytes` is an alias for `SecretBytes.random`. `uuidV4` returns a lowercase
-RFC 4122 version 4 UUID string.
+`randomBytes` is an alias for `SecretBytes.random`. `randomToken(byteLength)`
+generates `byteLength` random bytes and returns them as unpadded Base64URL; for
+example, 24 bytes produce a 32-character token. `uuidV4` returns a lowercase RFC
+4122 version 4 UUID string.
 
 ### Encodings
 

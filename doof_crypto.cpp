@@ -641,11 +641,11 @@ bool timing_safe_equal(
     const std::size_t b_size = b ? b->size() : 0u;
     const std::size_t max_size = std::max(a_size, b_size);
 
-    uint8_t diff = static_cast<uint8_t>(a_size ^ b_size);
+    std::size_t diff = a_size ^ b_size;
     for (std::size_t index = 0; index < max_size; ++index) {
         const uint8_t a_byte = index < a_size ? (*a)[index] : 0u;
         const uint8_t b_byte = index < b_size ? (*b)[index] : 0u;
-        diff = static_cast<uint8_t>(diff | (a_byte ^ b_byte));
+        diff |= static_cast<std::size_t>(a_byte ^ b_byte);
     }
 
     return diff == 0u;

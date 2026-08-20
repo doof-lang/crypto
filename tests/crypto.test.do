@@ -1,10 +1,13 @@
 import { Assert } from "std/assert"
 import {
     blobStreamToSha256, decodeBase64, decodeBase64Url, decodeHex, encodeBase64,
-    encodeBase64Url, encodeHex, hmacSha256, hmacSha256Base64Url,
-    hmacSha256Hex, randomBytes,
-    SecretBytes, sha1, sha1Hex, sha1HexString, sha1String, sha256, sha256Hex,
-    sha256HexString, sha256String, timingSafeEqual, uuidV4, parseJwt,
+    encodeBase64Url, encodeHex, hmacSha256, hmacSha256Base64,
+    hmacSha256Base64String, hmacSha256Base64Url, hmacSha256Base64UrlString,
+    hmacSha256Hex, hmacSha256HexString, hmacSha256String, randomBytes,
+    randomToken, SecretBytes, sha1, sha1Hex, sha1HexString, sha1String, sha256,
+    sha256Base64, sha256Base64String, sha256Base64Url, sha256Base64UrlString,
+    Sha256Hasher, sha256Hex, sha256HexString, sha256String, timingSafeEqual,
+    uuidV4, parseJwt,
     verifyJwtHs256,
 } from "../index"
 
@@ -106,6 +109,25 @@ export function testSha256StringMatchesByteHash(): none {
     assertBytes(sha256String("hello"), sha256(payload))
 }
 
+export function testSha256EncodingHelpers(): none {
+    payload: readonly byte[] := [97, 98, 99]
+    Assert.equal(sha256Base64(payload), "ungWv48Bz+pBQUDeXa4iI7ADYaOWF3qctBD/YfIAFa0=")
+    Assert.equal(sha256Base64String("abc"), sha256Base64(payload))
+    Assert.equal(sha256Base64Url(payload), "ungWv48Bz-pBQUDeXa4iI7ADYaOWF3qctBD_YfIAFa0")
+    Assert.equal(sha256Base64UrlString("abc"), sha256Base64Url(payload))
+}
+
+export function testSha256HasherUpdatesIncrementally(): none {
+    hasher := Sha256Hasher.create()
+    hasher.update([104, 101])
+    hasher.update([])
+    hasher.update([108, 108, 111])
+
+    digest := hasher.finish()
+    assertBytes(digest, sha256String("hello"))
+    assertBytes(hasher.finish(), digest)
+}
+
 export function testStreamToSha256MatchesOneShotHash(): none {
     let stream: Stream<readonly byte[]> = ChunkStream {
         chunks: [
@@ -165,6 +187,17 @@ export function testHmacSha256Base64Url(): none {
     Assert.equal(hmacSha256Base64Url(key, payload), "UDH-PZicbRU3oBP6bnOdojRj_a7DtwE32Cjjas4iG9A")
 }
 
+export function testHmacSha256EncodingAndStringHelpers(): none {
+    key := SecretBytes.steal([107, 101, 121])
+    payload: readonly byte[] := [100, 97, 116, 97]
+
+    assertBytes(hmacSha256String(key, "data"), hmacSha256(key, payload))
+    Assert.equal(hmacSha256HexString(key, "data"), hmacSha256Hex(key, payload))
+    Assert.equal(hmacSha256Base64(key, payload), "UDH+PZicbRU3oBP6bnOdojRj/a7DtwE32Cjjas4iG9A=")
+    Assert.equal(hmacSha256Base64String(key, "data"), hmacSha256Base64(key, payload))
+    Assert.equal(hmacSha256Base64UrlString(key, "data"), hmacSha256Base64Url(key, payload))
+}
+
 export function testTimingSafeEqual(): none {
     a: readonly byte[] := [1, 2, 3]
     same: readonly byte[] := [1, 2, 3]
@@ -174,6 +207,18 @@ export function testTimingSafeEqual(): none {
     Assert.isTrue(timingSafeEqual(a, same))
     Assert.isFalse(timingSafeEqual(a, differentValue))
     Assert.isFalse(timingSafeEqual(a, differentLength))
+}
+
+export function testTimingSafeEqualRejectsLengthsDifferingBy256(): none {
+    let zeros: byte[] = []
+    zeros.reserve(256)
+    for index of 0..<256 {
+        zeros.push(0)
+    }
+
+    empty: readonly byte[] := []
+    readonlyZeros := zeros.drainToReadonly()
+    Assert.isFalse(timingSafeEqual(empty, readonlyZeros))
 }
 
 export function testEncodeBase64(): none {
@@ -209,6 +254,13 @@ export function testRandomBytesLength(): none {
 
 export function testRandomBytesZeroLength(): none {
     Assert.equal(randomBytes(0).length(), 0)
+}
+
+export function testRandomToken(): none {
+    token := randomToken(24)
+    Assert.equal(token.length, 32)
+    Assert.equal((try! decodeBase64Url(token)).length, 24)
+    Assert.equal(randomToken(0), "")
 }
 
 export function testSecretBytesStealAndBytes(): none {

@@ -18,11 +18,26 @@ export import isolated function sha256(data: readonly byte[]): readonly byte[] f
 export import isolated function sha256String(text: string): readonly byte[] from "doof_crypto.hpp" as doof_crypto::sha256_utf8
 export function sha256Hex(data: readonly byte[]): string => encodeHex(sha256(data))
 export function sha256HexString(text: string): string => encodeHex(sha256String(text))
+export function sha256Base64(data: readonly byte[]): string => encodeBase64(sha256(data))
+export function sha256Base64String(text: string): string => encodeBase64(sha256String(text))
+export function sha256Base64Url(data: readonly byte[]): string => encodeBase64Url(sha256(data))
+export function sha256Base64UrlString(text: string): string => encodeBase64Url(sha256String(text))
 export import isolated function blobStreamToSha256(source: Stream<readonly byte[]>): readonly byte[] from "doof_crypto.hpp" as doof_crypto::stream_to_sha256
+
+export import class Sha256Hasher from "doof_crypto.hpp" as doof_crypto::NativeSha256Hasher {
+    isolated static create(): Sha256Hasher
+    isolated update(data: readonly byte[]): none
+    isolated finish(): readonly byte[]
+}
 
 export import isolated function hmacSha256(key: SecretBytes, data: readonly byte[]): readonly byte[] from "doof_crypto.hpp" as doof_crypto::hmac_sha256
 export function hmacSha256Hex(key: SecretBytes, data: readonly byte[]): string => encodeHex(hmacSha256(key, data))
+export function hmacSha256Base64(key: SecretBytes, data: readonly byte[]): string => encodeBase64(hmacSha256(key, data))
 export function hmacSha256Base64Url(key: SecretBytes, data: readonly byte[]): string => encodeBase64Url(hmacSha256(key, data))
+export function hmacSha256String(key: SecretBytes, text: string): readonly byte[] => hmacSha256(key, stringToBytes(text))
+export function hmacSha256HexString(key: SecretBytes, text: string): string => encodeHex(hmacSha256String(key, text))
+export function hmacSha256Base64String(key: SecretBytes, text: string): string => encodeBase64(hmacSha256String(key, text))
+export function hmacSha256Base64UrlString(key: SecretBytes, text: string): string => encodeBase64Url(hmacSha256String(key, text))
 export import isolated function timingSafeEqual(a: readonly byte[], b: readonly byte[]): bool from "doof_crypto.hpp" as doof_crypto::timing_safe_equal
 
 export import isolated function encodeHex(data: readonly byte[]): string from "doof_crypto.hpp" as doof_crypto::encode_hex
@@ -33,6 +48,7 @@ export import isolated function encodeBase64Url(data: readonly byte[]): string f
 export import isolated function decodeBase64Url(text: string): Result<readonly byte[], string> from "doof_crypto.hpp" as doof_crypto::decode_base64_url
 
 export function randomBytes(length: int): SecretBytes => SecretBytes.random(length)
+export function randomToken(byteLength: int): string => encodeBase64Url(randomBytes(byteLength).bytes())
 export import isolated function uuidV4(): string from "doof_crypto.hpp" as doof_crypto::uuid_v4
 
 export class Jwt {

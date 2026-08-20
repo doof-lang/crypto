@@ -2,7 +2,7 @@
 
 Small cryptographic primitives for Doof.
 
-This package provides SHA-1 and SHA-256 digests, HMAC-SHA-256, JWT HS256 verification, secret byte storage, random byte generation, UUID v4 generation, and text encoding utilities so packages can hash payloads, verify fixtures, generate identifiers, and move binary values through text-based interfaces.
+This package provides SHA-1 and SHA-256 digests, incremental SHA-256 hashing, HMAC-SHA-256, JWT HS256 verification, secret byte storage, random byte and token generation, UUID v4 generation, and text encoding utilities so packages can hash payloads, verify fixtures, generate identifiers, and move binary values through text-based interfaces.
 
 ## Documentation
 
@@ -42,6 +42,10 @@ println(encodeHex(digest))
 ```
 
 `blobStreamToSha256(source)` accepts `Stream<readonly byte[]>` and hashes the concatenation of all bytes produced by the stream.
+
+Use `Sha256Hasher.create()` when the chunks do not come from a stream. Call
+`update(chunk)` for each chunk and `finish()` to obtain the digest. Calling
+`update()` after `finish()` is a programmer error.
 
 ### Generate secret random bytes and a UUID
 
@@ -149,6 +153,16 @@ println(decoded.length)
 	- Returns the lowercase hexadecimal representation of the SHA-256 digest for `data`.
 - `sha256HexString(text: string) -> string`
 	- Convenience: SHA-256 of `text` (UTF-8) as lowercase hex.
+- `sha256Base64(data: readonly byte[]) -> string`
+	- Returns the padded Base64 representation of the SHA-256 digest.
+- `sha256Base64String(text: string) -> string`
+	- Hashes UTF-8 text and returns the digest as padded Base64.
+- `sha256Base64Url(data: readonly byte[]) -> string`
+	- Returns the unpadded Base64URL representation of the SHA-256 digest.
+- `sha256Base64UrlString(text: string) -> string`
+	- Hashes UTF-8 text and returns the digest as unpadded Base64URL.
+- `Sha256Hasher.create() -> Sha256Hasher`
+	- Creates an incremental SHA-256 hasher with `update(data)` and `finish()` methods.
 - `blobStreamToSha256(source: Stream<readonly byte[]>) -> readonly byte[]`
 	- Incrementally hashes the concatenated bytes from `source` and returns the 32-byte digest.
 - `SecretBytes.random(length: int) -> SecretBytes`
@@ -163,12 +177,18 @@ println(decoded.length)
 	- Computes HMAC-SHA-256 over `data` using secret binary `key`.
 - `hmacSha256Hex(key: SecretBytes, data: readonly byte[]) -> string`
 	- Computes HMAC-SHA-256 and returns lowercase hex.
+- `hmacSha256Base64(key: SecretBytes, data: readonly byte[]) -> string`
+	- Computes HMAC-SHA-256 and returns padded Base64.
 - `hmacSha256Base64Url(key: SecretBytes, data: readonly byte[]) -> string`
 	- Computes HMAC-SHA-256 and returns unpadded base64url.
+- `hmacSha256String` and encoded `*String` variants
+	- Hash UTF-8 text instead of a byte array.
 - `timingSafeEqual(a: readonly byte[], b: readonly byte[]) -> bool`
 	- Compares byte arrays without data-dependent early exit.
 - `randomBytes(length: int) -> SecretBytes`
 	- Alias for `SecretBytes.random(length)`.
+- `randomToken(byteLength: int) -> string`
+	- Generates `byteLength` secure random bytes and returns them as unpadded Base64URL.
 - `uuidV4() -> string`
 	- Returns a lowercase RFC 4122 version 4 UUID string.
 - `encodeHex(data: readonly byte[]) -> string`
