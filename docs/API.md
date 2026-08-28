@@ -109,8 +109,9 @@ println(encodeHex(copy))
 key.wipe()
 ```
 
-`SecretBytes.random(length)` and `randomBytes(length)` use the platform's
-cryptographically secure random source. Passing a negative length is a
+`SecretBytes.random(length)` and `randomBytes(length)` use `BCryptGenRandom` on
+Windows, `getrandom` on Linux, and `arc4random_buf` on macOS and BSD platforms.
+Passing a negative length is a
 programmer error and panics.
 
 `SecretBytes.steal(data)` copies bytes into secret storage and clears the

@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <array>
+#include <cerrno>
 #include <cstddef>
 #include <cstdint>
 #include <limits>
@@ -16,6 +17,8 @@
 #include <windows.h>
 #include <bcrypt.h>
 #pragma comment(lib, "bcrypt.lib")
+#elif defined(__linux__)
+#include <sys/random.h>
 #endif
 
 namespace doof_crypto {
@@ -36,6 +39,21 @@ void secure_random_bytes(uint8_t* data, std::size_t size) {
         }
         data += chunk;
         size -= chunk;
+    }
+#elif defined(__linux__)
+    while (size > 0) {
+        const ssize_t received = ::getrandom(data, size, 0);
+        if (received < 0) {
+            if (errno == EINTR) {
+                continue;
+            }
+            doof::panic("Failed to obtain secure random bytes from Linux getrandom");
+        }
+        if (received == 0) {
+            doof::panic("Linux getrandom returned no secure random bytes");
+        }
+        data += static_cast<std::size_t>(received);
+        size -= static_cast<std::size_t>(received);
     }
 #else
     ::arc4random_buf(data, size);
