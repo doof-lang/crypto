@@ -17,6 +17,8 @@
 #include <windows.h>
 #include <bcrypt.h>
 #pragma comment(lib, "bcrypt.lib")
+#elif defined(__EMSCRIPTEN__)
+#include <unistd.h>
 #elif defined(__linux__)
 #include <sys/random.h>
 #endif
@@ -36,6 +38,17 @@ void secure_random_bytes(uint8_t* data, std::size_t size) {
         const ULONG chunk = static_cast<ULONG>(std::min<std::size_t>(size, std::numeric_limits<ULONG>::max()));
         if (::BCryptGenRandom(nullptr, data, chunk, BCRYPT_USE_SYSTEM_PREFERRED_RNG) != 0) {
             doof::panic("Failed to obtain secure random bytes from Windows");
+        }
+        data += chunk;
+        size -= chunk;
+    }
+#elif defined(__EMSCRIPTEN__)
+    // Emscripten maps getentropy to the host's WASI random_get. Its contract
+    // limits each request to 256 bytes; never substitute a nonsecure PRNG.
+    while (size > 0) {
+        const std::size_t chunk = std::min<std::size_t>(size, 256u);
+        if (::getentropy(data, chunk) != 0) {
+            doof::panic("Failed to obtain secure random bytes from WebAssembly host");
         }
         data += chunk;
         size -= chunk;

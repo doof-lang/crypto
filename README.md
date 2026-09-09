@@ -203,5 +203,6 @@ println(decoded.length)
 - `encodeHex` always emits lowercase hex.
 - `decodeHex` accepts either case but will fail on non-hex characters or odd-length input.
 - The random bytes generator uses `BCryptGenRandom` on Windows, `getrandom` on
-  Linux, and `arc4random_buf` on macOS and BSD platforms.
+  Linux, `getentropy` through the Wasm host on Emscripten, and
+  `arc4random_buf` on macOS and BSD platforms.
 - The UUID generator produces RFC 4122 version 4 UUIDs, which are random except for fixed version and variant bits.

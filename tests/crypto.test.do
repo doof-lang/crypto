@@ -348,3 +348,9 @@ export function testVerifyJwtHs256RejectsAlgorithmMismatch(): none {
     key := SecretBytes.steal([115, 101, 99, 114, 101, 116])
     Assert.isTrue(isFailure(verifyJwtHs256(token, key)))
 }
+
+export function testRandomBytesEntropyChunkBoundaries(): none {
+    for length of [0, 1, 255, 256, 257, 1024] {
+        Assert.equal(randomBytes(length).length(), length)
+    }
+}

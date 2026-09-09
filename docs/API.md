@@ -110,7 +110,8 @@ key.wipe()
 ```
 
 `SecretBytes.random(length)` and `randomBytes(length)` use `BCryptGenRandom` on
-Windows, `getrandom` on Linux, and `arc4random_buf` on macOS and BSD platforms.
+Windows, `getrandom` on Linux, `getentropy` through the Wasm host on Emscripten, and
+  `arc4random_buf` on macOS and BSD platforms.
 Passing a negative length is a
 programmer error and panics.
 
