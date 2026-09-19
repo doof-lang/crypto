@@ -125,8 +125,8 @@ export function parseJwt(token: string): Result<Jwt, JwtError> {
 }
 
 export function verifyJwtHs256(token: string, key: SecretBytes): Result<Jwt, JwtError> {
-    jwt := parseJwt(token) else {
-        return { error: jwt.error }
+    jwt := parseJwt(token) else error {
+        return { error }
     }
 
     alg := jwt.header.get("alg") as string else {
