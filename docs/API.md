@@ -334,8 +334,8 @@ export function verifyJwtHs256(token: string, key: SecretBytes): Result<Jwt, Jwt
 
 `Jwt` fields:
 
-- `header: readonly Map<string, JsonValue>`
-- `claims: readonly Map<string, JsonValue>`
+- `header: readonly Map<string, SerialValue>`
+- `claims: readonly Map<string, SerialValue>`
 - `signedContent: string`
 - `signature: byte[]`
 

@@ -52,8 +52,8 @@ export function randomToken(byteLength: int): string => encodeBase64Url(randomBy
 export import isolated function uuidV4(): string from "doof_crypto.hpp" as doof_crypto::uuid_v4
 
 export class Jwt {
-    readonly header: readonly Map<string, JsonValue>
-    readonly claims: readonly Map<string, JsonValue>
+    readonly header: readonly Map<string, SerialValue>
+    readonly claims: readonly Map<string, SerialValue>
     readonly signedContent: string
     readonly signature: byte[]
 }
@@ -105,11 +105,11 @@ export function parseJwt(token: string): Result<Jwt, JwtError> {
         return { error: .InvalidPayload }
     }
 
-    header := headerJsonValue as readonly Map<string, JsonValue> else {
+    header := headerJsonValue as readonly Map<string, SerialValue> else {
         return { error: .InvalidHeader }
     }
 
-    claims := claimsJsonValue as readonly Map<string, JsonValue> else {
+    claims := claimsJsonValue as readonly Map<string, SerialValue> else {
         return { error: .InvalidPayload }
     }
 
