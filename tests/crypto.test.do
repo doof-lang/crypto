@@ -51,7 +51,7 @@ export function testEncodeHex(): none {
 }
 
 export function testDecodeHex(): none {
-    decoded := try! decodeHex("00010F10abff")
+    decoded := decodeHex("00010F10abff")!
     expected: readonly byte[] := [0, 1, 15, 16, 171, 255]
     assertBytes(decoded, expected)
 }
@@ -228,8 +228,8 @@ export function testEncodeBase64(): none {
 
 export function testDecodeBase64(): none {
     payload: readonly byte[] := [104, 101, 108, 108, 111]
-    assertBytes(try! decodeBase64("aGVsbG8="), payload)
-    assertBytes(try! decodeBase64("aGVsbG8"), payload)
+    assertBytes(decodeBase64("aGVsbG8=")!, payload)
+    assertBytes(decodeBase64("aGVsbG8")!, payload)
 }
 
 export function testEncodeBase64Url(): none {
@@ -239,7 +239,7 @@ export function testEncodeBase64Url(): none {
 
 export function testDecodeBase64Url(): none {
     payload: readonly byte[] := [251, 239, 255]
-    assertBytes(try! decodeBase64Url("--__"), payload)
+    assertBytes(decodeBase64Url("--__")!, payload)
 }
 
 export function testDecodeBase64RejectsInvalidCharacter(): none {
@@ -259,7 +259,7 @@ export function testRandomBytesZeroLength(): none {
 export function testRandomToken(): none {
     token := randomToken(24)
     Assert.equal(token.length, 32)
-    Assert.equal((try! decodeBase64Url(token)).length, 24)
+    Assert.equal((decodeBase64Url(token)!).length, 24)
     Assert.equal(randomToken(0), "")
 }
 
@@ -288,12 +288,12 @@ export function testUuidV4Shape(): none {
 
     compact := uuid.replaceAll("-", "")
     Assert.equal(compact.length, 32)
-    Assert.equal((try! decodeHex(compact)).length, 16)
+    Assert.equal((decodeHex(compact)!).length, 16)
 }
 
 export function testParseJwt(): none {
     token := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c"  
-    jwt := try! parseJwt(token)
+    jwt := parseJwt(token)!
     alg := jwt.header.get("alg") as string else {
         panic("Missing or malformed alg in header")
     }
@@ -318,7 +318,7 @@ export function testVerifyJwtHs256(): none {
         121, 111, 117, 114, 45, 50, 53, 54, 45, 98, 105, 116, 45,
         115, 101, 99, 114, 101, 116,
     ])
-    jwt := try! verifyJwtHs256(token, key)
+    jwt := verifyJwtHs256(token, key)!
     name := jwt.claims.get("name") as string else {
         panic("Missing or malformed name in claims")
     }
@@ -329,7 +329,7 @@ export function testVerifyJwtHs256(): none {
 export function testVerifyJwtHs256Bytes(): none {
     token := "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjMifQ.ZjfNiRshnSbF4iYwt1MtAQat8zRdUCKNyfXJdsfM8b0"
     key := SecretBytes.steal([115, 101, 99, 114, 101, 116])
-    jwt := try! verifyJwtHs256(token, key)
+    jwt := verifyJwtHs256(token, key)!
     sub := jwt.claims.get("sub") as string else {
         panic("Missing or malformed sub in claims")
     }
