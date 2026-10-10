@@ -143,3 +143,5 @@ export function verifyJwtHs256(token: string, key: SecretBytes): Result<Jwt, Jwt
 
     return { value: jwt }
 }
+
+export { CryptoErrorKind, CryptoError, RsaPrivateKey, RsaPublicKey } from "./rsa"

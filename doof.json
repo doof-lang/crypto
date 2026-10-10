@@ -5,11 +5,20 @@
   "build": {
     "native": {
       "sourceFiles": [
-        "./doof_crypto.cpp"
+        "./doof_crypto.cpp", "./doof_rsa.cpp", "./rsa_encoding.cpp"
       ],
       "extraCopyPaths": [
-        "./doof_crypto.hpp"
-      ]
+        "./doof_crypto.hpp", "./doof_rsa.hpp", "./rsa_encoding.hpp",
+        "./rsa_apple.hpp", "./rsa_cng.hpp", "./rsa_evp.hpp"
+      ],
+      "macos": { "frameworks": ["Security", "CoreFoundation"] },
+      "windows": { "linkLibraries": ["bcrypt"] },
+      "linux": {
+        "optionalPkgConfigPackages": [{
+          "name": "libcrypto", "define": "DOOF_CRYPTO_RSA_EVP",
+          "minimumVersion": "3.0", "probeSource": "rsa_openssl_probe.cpp"
+        }]
+      }
     }
   },
   "dependencies": {

@@ -3,11 +3,11 @@
 `std/crypto` provides small cryptographic building blocks for Doof programs:
 SHA digests, incremental SHA-256 hashing, HMAC-SHA-256, secret byte storage,
 random bytes and tokens, UUID v4 generation, hex/base64 encodings, and HS256
-JWT parsing and verification.
+JWT parsing and verification, and RSA-SHA256 signing and verification.
 
-The package is intentionally focused. It does not provide public-key
-cryptography, password hashing, encryption modes, or a full JWT validation
-framework.
+See the [RSA signing guide](RSA-API.md) for PKCS#1 v1.5 signing with SHA-256.
+The package does not provide password hashing, encryption modes, or a full JWT
+validation framework.
 
 ## Quick Start
 

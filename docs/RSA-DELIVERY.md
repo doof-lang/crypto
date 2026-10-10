@@ -1,7 +1,7 @@
 # RSA-SHA256 delivery proposal
 
 Status: platform-backend strategy approved with operational key validation;
-compiler optional-dependency support implemented; RSA implementation pending.
+compiler support and RSA API/backends implemented; platform acceptance in progress.
 Date: 10 October 2026.
 
 Decision: proceed with Apple Security, Windows CNG and Linux OpenSSL EVP.
