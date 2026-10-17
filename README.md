@@ -99,11 +99,11 @@ import { SecretBytes, encodeBase64, decodeBase64, encodeBase64Url, decodeBase64U
 
 blob := SecretBytes.random(8).bytes()
 b64 := encodeBase64(blob)
-decoded := try! decodeBase64(b64)
+decoded := decodeBase64(b64)!
 println(decoded.length)
 
 url := encodeBase64Url(blob)
-decodedUrl := try! decodeBase64Url(url)
+decodedUrl := decodeBase64Url(url)!
 println(decodedUrl.length)
 ```
 
@@ -131,7 +131,7 @@ println(encodeHex(jwt.signature))
 ```doof
 import { decodeHex } from "std/crypto"
 
-decoded := try! decodeHex("deadbeef")
+decoded := decodeHex("deadbeef")!
 println(decoded.length)
 ```
 

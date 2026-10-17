@@ -151,7 +151,7 @@ import { decodeHex, encodeBase64, encodeBase64Url, encodeHex } from "std/crypto"
 bytes: readonly byte[] := [0, 1, 15, 16, 171, 255]
 
 hex := encodeHex(bytes)                  // "00010f10abff"
-roundTrip := try! decodeHex(hex)
+roundTrip := decodeHex(hex)!
 
 b64 := encodeBase64(bytes)               // padded standard base64
 b64url := encodeBase64Url(bytes)         // unpadded URL-safe base64
