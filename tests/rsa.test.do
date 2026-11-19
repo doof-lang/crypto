@@ -76,10 +76,10 @@ export function testRsaStrictPemEnvelope(): none {
     expectError(RsaPublicKey.fromPem([]), .InvalidKey)
     expectError(RsaPublicKey.fromPem(bytes("garbage")), .InvalidKey)
     expectError(RsaPublicKey.fromPem(bytes(rsa2048public + rsa2048public)), .InvalidKey)
-    expectError(RsaPublicKey.fromPem(bytes(rsa2048public + "trailing")), .InvalidKey)
+    expectError(RsaPublicKey.fromPem(bytes("${rsa2048public}trailing")), .InvalidKey)
     expectError(RsaPublicKey.fromPem(bytes("-----BEGIN PUBLIC KEY-----\n!!!!\n-----END PUBLIC KEY-----")), .InvalidKey)
     expectError(RsaPublicKey.fromPem(bytes("-----BEGIN PUBLIC KEY-----\nMAA=\n-----END PUBLIC KEY-----")), .InvalidKey)
-    if !unavailable() { key := RsaPublicKey.fromPem(bytes(" \t\n" + rsa2048public + "\r\n "))! }
+    if !unavailable() { key := RsaPublicKey.fromPem(bytes(" \t\n${rsa2048public}\r\n "))! }
 }
 
 export function testRsaEncryptedAndUnsupported(): none {
@@ -109,8 +109,8 @@ export function testRsaRejectsTrailingAndTruncatedDer(): none {
     trailing := BlobBuilder()
     trailing.writeBytes(der)
     trailing.writeByte(0)
-    expectError(RsaPublicKey.fromPem(bytes("-----BEGIN RSA PUBLIC KEY-----\n" + encodeBase64(trailing.build()) + "\n-----END RSA PUBLIC KEY-----")), .InvalidKey)
+    expectError(RsaPublicKey.fromPem(bytes("-----BEGIN RSA PUBLIC KEY-----\n${encodeBase64(trailing.build())}\n-----END RSA PUBLIC KEY-----")), .InvalidKey)
     truncated := BlobBuilder()
     for i of 0..<der.length - 1 { truncated.writeByte(der[i]) }
-    expectError(RsaPublicKey.fromPem(bytes("-----BEGIN RSA PUBLIC KEY-----\n" + encodeBase64(truncated.build()) + "\n-----END RSA PUBLIC KEY-----")), .InvalidKey)
+    expectError(RsaPublicKey.fromPem(bytes("-----BEGIN RSA PUBLIC KEY-----\n${encodeBase64(truncated.build())}\n-----END RSA PUBLIC KEY-----")), .InvalidKey)
 }

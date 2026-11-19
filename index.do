@@ -117,7 +117,7 @@ export function parseJwt(token: string): Result<Jwt, JwtError> {
         value: {
             header,
             claims,
-            signedContent: parts[0] + "." + parts[1],
+            signedContent: "${parts[0]}.${parts[1]}",
             signature
         }
     }

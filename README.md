@@ -171,7 +171,7 @@ println(decoded.length)
 	- Returns cryptographically-strong random bytes owned by a `SecretBytes` value.
 - `SecretBytes.steal(data: readonly byte[]) -> SecretBytes`
 	- Copies `data` into secret storage and zeroes the source buffer passed to the native bridge.
-- `SecretBytes#wipe() -> void`
+- `SecretBytes#wipe() -> none`
 	- Zeroes the owned native buffer immediately.
 - `SecretBytes#bytes() -> readonly byte[]`
 	- Returns a copy of the owned bytes.

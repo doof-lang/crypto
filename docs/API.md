@@ -275,7 +275,7 @@ Methods:
 
 - `static random(length: int): SecretBytes` creates secret random bytes.
 - `static steal(data: readonly byte[]): SecretBytes` moves bytes into secret storage.
-- `wipe(): void` zeroes the owned native buffer immediately.
+- `wipe(): none` zeroes the owned native buffer immediately.
 - `bytes(): readonly byte[]` returns a copy of the owned bytes.
 - `length(): int` returns the current byte length.
 
